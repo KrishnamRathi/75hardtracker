@@ -17,6 +17,7 @@ export interface AppState {
     startDate: string;
     startDateLocked: boolean;
     hasSeenOnboarding: boolean;
+    userName?: string;
 }
 
 export const INITIAL_STATE: AppState = {
@@ -24,4 +25,5 @@ export const INITIAL_STATE: AppState = {
     startDate: new Date().toISOString().split('T')[0],
     startDateLocked: false,
     hasSeenOnboarding: false,
+    userName: '',
 };

@@ -2,6 +2,9 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { AppState, DailyProgress, INITIAL_STATE } from '@/types';
+import { auth, db } from '@/lib/firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 
 interface HabitContextType extends AppState {
     toggleHabit: (date: string, habit: keyof DailyProgress | 'workout1' | 'workout2') => void;
@@ -11,34 +14,140 @@ interface HabitContextType extends AppState {
     setStartDate: (date: string) => void;
     resetChallenge: () => void;
     completeOnboarding: () => void;
+    user: User | null;
+    loading: boolean;
+    error: string | null;
+    setUserName: (name: string) => void;
+    logout: () => Promise<void>;
 }
 
 const HabitContext = createContext<HabitContextType | null>(null);
 
-const STORAGE_KEY = '75hard_data';
-
 export function HabitProvider({ children }: { children: React.ReactNode }) {
     const [state, setState] = useState<AppState>(INITIAL_STATE);
-    const [loaded, setLoaded] = useState(false);
+    const [user, setUser] = useState<User | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
+    // Auth Subscription
     useEffect(() => {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-            try {
-                setState(JSON.parse(saved));
-            } catch (e) {
-                console.error('Failed to parse saved state', e);
+        const unsubscribe = onAuthStateChanged(auth, (u) => {
+            setUser(u);
+            setLoading(false);
+            if (!u) {
+                // If logged out, reset to initial
+                setState(INITIAL_STATE);
             }
+        });
+
+        // Initial LocalStorage check for onboarding (device specific)
+        const localOnboarding = localStorage.getItem('hasSeenOnboarding');
+        if (localOnboarding === 'true') {
+            setState(prev => ({ ...prev, hasSeenOnboarding: true }));
         }
-        setLoaded(true);
+
+        return () => unsubscribe();
     }, []);
 
+    // Data Subscription to Firestore
     useEffect(() => {
-        if (loaded) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-        }
-    }, [state, loaded]);
+        if (!user) return;
 
+        const docRef = doc(db, 'users', user.uid, 'challenge', 'data');
+        const unsub = onSnapshot(docRef, (snap) => {
+            setError(null); // Clear error on success
+            if (snap.exists()) {
+                const firestoreData = snap.data() as AppState;
+
+                // Hydrate photos from localStorage
+                const hydratedEntries = { ...firestoreData.entries };
+                Object.keys(hydratedEntries).forEach(date => {
+                    if (hydratedEntries[date].photo) {
+                        const localPhotoKey = `photo_${user.uid}_${date}`;
+                        try {
+                            const localPhoto = localStorage.getItem(localPhotoKey);
+                            if (localPhoto) {
+                                hydratedEntries[date].photoData = localPhoto;
+                            }
+                        } catch (e) { console.error(e) }
+                    }
+                });
+
+                // Auto-populate userName from OAuth if not set
+                let finalUserName = firestoreData.userName;
+                if (!finalUserName && user.displayName) {
+                    finalUserName = user.displayName;
+                    // Save it to Firestore for future use
+                    const updatedState = { ...firestoreData, userName: finalUserName };
+                    setDoc(docRef, { userName: finalUserName }, { merge: true });
+                }
+
+                // MERGE: Keep local hasSeenOnboarding, take everything else from Firestore
+                setState(prev => ({
+                    ...firestoreData,
+                    entries: hydratedEntries,
+                    userName: finalUserName,
+                    hasSeenOnboarding: prev.hasSeenOnboarding // Keep local truth
+                }));
+            } else {
+                // Initialize doc if not exists
+                // Don't sync hasSeenOnboarding even here
+                const { hasSeenOnboarding, ...initialRest } = INITIAL_STATE;
+
+                // Auto-populate userName from OAuth on first setup
+                const initialUserName = user.displayName || '';
+                const docToCreate = { ...initialRest, userName: initialUserName };
+
+                setDoc(docRef, docToCreate, { merge: true });
+
+                // Update local state with the userName
+                setState(prev => ({ ...prev, userName: initialUserName }));
+            }
+        }, (err) => {
+            console.error("Firestore Error:", err);
+            if (err.code === 'permission-denied') {
+                setError("Database permission denied. Your progress is NOT saving. Please update Firestore Rules.");
+            } else {
+                setError(err.message);
+            }
+        });
+
+        return () => unsub();
+    }, [user]);
+
+    // Helper to sync state to firestore (Stripping photoData AND hasSeenOnboarding)
+    const syncToFirestore = async (newState: AppState) => {
+        if (!user) return;
+        try {
+            // Create a copy of state to clean up before saving
+            // EXCLUDE hasSeenOnboarding from Firestore
+            const { hasSeenOnboarding, ...stateToSave } = newState;
+
+            // Re-assign entries object to avoid mutating original
+            const entriesToSave = { ...stateToSave.entries };
+
+            // Strip photoData to avoid size limits and save to localStorage instead
+            Object.keys(entriesToSave).forEach(date => {
+                const entry = entriesToSave[date];
+                if (entry.photoData) {
+                    // Make sure it's null in Firestore
+                    entriesToSave[date] = { ...entry, photoData: null };
+                }
+            });
+
+            // @ts-ignore - we are intentionally saving a partial object (without hasSeenOnboarding)
+            const finalDoc = { ...stateToSave, entries: entriesToSave };
+
+            const docRef = doc(db, 'users', user.uid, 'challenge', 'data');
+            await setDoc(docRef, finalDoc, { merge: true });
+            setError(null);
+        } catch (e: any) {
+            console.error("Error writing document: ", e);
+            if (e.code === 'permission-denied') {
+                setError("Database permission denied. Changes won't save.");
+            }
+        }
+    };
     const getEntry = (date: string): DailyProgress => {
         return state.entries[date] || {
             date,
@@ -68,13 +177,21 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
                 nextEntryData = update;
             }
 
-            return {
-                ...prev,
-                entries: {
-                    ...prev.entries,
-                    [date]: { ...currentEntry, ...nextEntryData }
-                }
+            const nextEntries = {
+                ...prev.entries,
+                [date]: { ...currentEntry, ...nextEntryData }
             };
+
+            // Auto-lock start date when any activity begins
+            const shouldLock = !prev.startDateLocked;
+            const newState = {
+                ...prev,
+                entries: nextEntries,
+                startDateLocked: shouldLock ? true : prev.startDateLocked
+            };
+
+            syncToFirestore(newState);
+            return newState;
         });
     };
 
@@ -98,24 +215,89 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
     };
 
     const setPhoto = (date: string, hasPhoto: boolean, data?: string | null) => {
-        updateEntry(date, { photo: hasPhoto, photoData: hasPhoto ? data : null });
+        if (!user) return;
+
+        // 1. Save to LocalStorage
+        const localPhotoKey = `photo_${user.uid}_${date}`;
+        if (hasPhoto && data) {
+            try {
+                localStorage.setItem(localPhotoKey, data);
+            } catch (e) {
+                console.error("Failed to save photo to localStorage", e);
+                alert("Storage full! Cannot save photo.");
+                return;
+            }
+        } else {
+            localStorage.removeItem(localPhotoKey);
+        }
+
+        // 2. Update Context state (for immediate UI) AND sync to Firestore (stripped)
+        updateEntry(date, { photo: hasPhoto, photoData: data }); // Context keeps data for UI
     };
 
     const setStartDate = (date: string) => {
         if (state.startDateLocked) return;
-        setState(prev => ({ ...prev, startDate: date, startDateLocked: true }));
-    };
-
-    const completeOnboarding = () => {
-        setState(prev => ({ ...prev, hasSeenOnboarding: true }));
+        setState(prev => {
+            const newState = { ...prev, startDate: date, startDateLocked: true };
+            syncToFirestore(newState);
+            return newState;
+        });
     };
 
     const resetChallenge = () => {
-        setState(INITIAL_STATE);
-        localStorage.removeItem(STORAGE_KEY);
+        if (user) {
+            // 1. Clear LocalStorage Photos
+            const prefix = `photo_${user.uid}_`;
+            const keysToRemove: string[] = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith(prefix)) {
+                    keysToRemove.push(key);
+                }
+            }
+            keysToRemove.forEach(k => { localStorage.removeItem(k) });
+        }
+
+        // 2. Clear Onboarding
+        // localStorage.removeItem('hasSeenOnboarding');
+
+        // 3. Reset State & Sync to Firestore
+        const newState = INITIAL_STATE;
+        const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding')
+        if (hasSeenOnboarding) {
+            newState.hasSeenOnboarding = hasSeenOnboarding === 'true';
+        }
+        setState(newState);
+        syncToFirestore(newState);
     };
 
-    if (!loaded) return null; // Or loading spinner
+    const completeOnboarding = () => {
+        localStorage.setItem('hasSeenOnboarding', 'true');
+        setState(prev => {
+            const newState = { ...prev, hasSeenOnboarding: true };
+            // syncToFirestore(newState); // No need to sync this anymore
+            return newState;
+        });
+    };
+
+    const setUserName = (name: string) => {
+        setState(prev => {
+            const newState = { ...prev, userName: name };
+            syncToFirestore(newState);
+            return newState;
+        });
+    };
+
+    const logout = async () => {
+        try {
+            await auth.signOut();
+            setState(INITIAL_STATE);
+        } catch (error) {
+            console.error("Error signing out: ", error);
+        }
+    };
+
+    if (loading) return null; // Or loading spinner
 
     return (
         <HabitContext.Provider value={{
@@ -126,7 +308,12 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
             getEntry,
             setStartDate,
             resetChallenge,
-            completeOnboarding
+            completeOnboarding,
+            setUserName,
+            logout,
+            user,
+            loading,
+            error
         }}>
             {children}
         </HabitContext.Provider>

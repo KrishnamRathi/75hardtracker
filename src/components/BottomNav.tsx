@@ -1,6 +1,6 @@
 "use client";
 import React from 'react';
-import { Home, Users, BarChart2, Image as ImageIcon, User } from 'lucide-react';
+import { Home, BarChart2, Grid, User } from 'lucide-react';
 import styles from './BottomNav.module.css';
 import clsx from 'clsx';
 import { usePathname } from 'next/navigation';
@@ -12,7 +12,8 @@ export default function BottomNav() {
     const items = [
         { icon: Home, label: 'Home', path: '/' },
         { icon: BarChart2, label: 'Insights', path: '/insights' },
-        { icon: ImageIcon, label: 'Gallery', path: '/gallery' },
+        { icon: Grid, label: 'Gallery', path: '/gallery' },
+        { icon: User, label: 'Profile', path: '/profile' },
     ];
 
     return (
