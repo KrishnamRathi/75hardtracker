@@ -5,7 +5,7 @@ import TaskCard from '@/components/TaskCard';
 import WaterTracker from '@/components/WaterTracker';
 import BottomNav from '@/components/BottomNav';
 import DateStrip from '@/components/DateStrip';
-import { Dumbbell, Sun, BookOpen, Carrot, Camera, RotateCcw } from 'lucide-react';
+import { Dumbbell, Sun, BookOpen, Carrot, Camera, RotateCcw, Brain } from 'lucide-react';
 import styles from './page.module.css';
 import clsx from 'clsx';
 
@@ -98,7 +98,7 @@ export default function Home() {
     }
   };
 
-  const handleTaskClick = (habit: 'workout1' | 'workout2' | 'reading' | 'diet') => {
+  const handleTaskClick = (habit: 'workout1' | 'workout2' | 'reading' | 'diet' | 'meditation') => {
     if (!isToday) return; // Disable for non-current dates
     toggleHabit(currentDate, habit);
   };
@@ -240,6 +240,16 @@ export default function Home() {
           onClick={handlePhotoClick}
           colorClass="text-purple"
           actionLabel={entry.photo ? "Retake" : "Camera"}
+        />
+
+        <TaskCard
+          title="Meditation"
+          subtitle="Mindfulness"
+          icon={Brain}
+          completed={entry.meditation}
+          onClick={() => handleTaskClick('meditation')}
+          colorClass="text-orange"
+          actionLabel={entry.meditation ? "Completed" : "Pending"}
         />
 
         <input

@@ -81,15 +81,7 @@ export default function Habits() {
                     actionLabel={entry.brushTeethNight ? "Completed" : "Pending"}
                 />
 
-                <TaskCard
-                    title="Meditation"
-                    subtitle="Mindfulness"
-                    icon={Brain}
-                    completed={entry.meditation}
-                    onClick={() => toggleDailyHabit(currentDate, 'meditation')}
-                    colorClass="text-orange"
-                    actionLabel={entry.meditation ? "Completed" : "Pending"}
-                />
+
 
                 <TaskCard
                     title="Guitar"

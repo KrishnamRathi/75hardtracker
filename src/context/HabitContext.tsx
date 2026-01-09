@@ -157,7 +157,8 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
             diet: false,
             reading: false,
             water: 0,
-            photo: false
+            photo: false,
+            meditation: false
         };
     };
 
@@ -169,7 +170,8 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
                 diet: false,
                 reading: false,
                 water: 0,
-                photo: false
+                photo: false,
+                meditation: false
             };
 
             let nextEntryData: Partial<DailyProgress>;
@@ -208,6 +210,7 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
             if (habit === 'diet') return { diet: !curr.diet };
             if (habit === 'reading') return { reading: !curr.reading };
             if (habit === 'photo') return { photo: !curr.photo };
+            if (habit === 'meditation') return { meditation: !curr.meditation };
             return {};
         });
     };
@@ -308,7 +311,6 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
                 skinCareMorning: false,
                 skinCareNight: false,
                 brushTeethNight: false,
-                meditation: false,
                 guitar: false
             };
         }
@@ -318,7 +320,6 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
             skinCareMorning: false,
             skinCareNight: false,
             brushTeethNight: false,
-            meditation: false,
             guitar: false
         };
     };

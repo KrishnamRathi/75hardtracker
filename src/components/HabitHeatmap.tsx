@@ -16,7 +16,6 @@ export default function HabitHeatmap() {
             entry.skinCareMorning &&
             entry.skinCareNight &&
             entry.brushTeethNight &&
-            entry.meditation &&
             entry.guitar
         );
     };

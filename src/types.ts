@@ -8,6 +8,7 @@ export interface DailyProgress {
     reading: boolean; // 10 pages
     water: number; // in oz, target 128
     photo: boolean;
+    meditation: boolean;
     photoData?: string | null; // Base64 data
 }
 
@@ -17,7 +18,6 @@ export interface DailyHabit {
     skinCareMorning: boolean;
     skinCareNight: boolean;
     brushTeethNight: boolean;
-    meditation: boolean;
     guitar: boolean;
 }
 
