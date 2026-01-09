@@ -263,17 +263,24 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
             keysToRemove.forEach(k => { localStorage.removeItem(k) });
         }
 
-        // 2. Clear Onboarding
-        // localStorage.removeItem('hasSeenOnboarding');
+        // 2. Update State & Sync to Firestore
+        setState(prev => {
+            const newState: AppState = {
+                ...INITIAL_STATE,
+                habitEntries: prev.habitEntries, // Preserve habits
+                userName: prev.userName,         // Preserve name
+                hasSeenOnboarding: prev.hasSeenOnboarding // Preserve onboarding status
+            };
 
-        // 3. Reset State & Sync to Firestore
-        const newState = INITIAL_STATE;
-        const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding')
-        if (hasSeenOnboarding) {
-            newState.hasSeenOnboarding = hasSeenOnboarding === 'true';
-        }
-        setState(newState);
-        syncToFirestore(newState);
+            // Re-check onboarding from localStorage for extra safety
+            const hasSeenOnboardingLocal = localStorage.getItem('hasSeenOnboarding');
+            if (hasSeenOnboardingLocal) {
+                newState.hasSeenOnboarding = hasSeenOnboardingLocal === 'true';
+            }
+
+            syncToFirestore(newState);
+            return newState;
+        });
     };
 
     const completeOnboarding = () => {
