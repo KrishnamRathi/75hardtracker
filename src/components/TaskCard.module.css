@@ -1,0 +1,78 @@
+.card {
+    background-color: var(--card-bg);
+    border-radius: 20px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 160px;
+    cursor: pointer;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.card:active {
+    transform: scale(0.98);
+}
+
+.completed {
+    border-color: var(--success);
+    background-color: rgba(50, 215, 75, 0.1);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.iconWrapper {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* background: rgba(255, 255, 255, 0.05); */
+}
+
+/* Colors handled by utilities or passed classes */
+.completed .iconWrapper {
+    color: var(--success) !important;
+}
+
+.check {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: var(--success);
+    color: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.content {
+    margin-top: auto;
+}
+
+.title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.subtitle {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.actionBadge {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 4px 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}

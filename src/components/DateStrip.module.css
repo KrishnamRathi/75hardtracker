@@ -1,0 +1,109 @@
+.container {
+    display: flex;
+    overflow-x: auto;
+    gap: 12px;
+    padding: 10px 20px;
+    margin: 0 -20px 20px -20px;
+    /* Bleed to edges */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE/Edge */
+    scroll-behavior: smooth;
+    border-bottom: 1px solid var(--card-border);
+    background: rgba(0, 0, 0, 0.8);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    backdrop-filter: blur(10px);
+}
+
+.container::-webkit-scrollbar {
+    display: none;
+}
+
+.dateItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 56px;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: all 0.2s ease;
+}
+
+.dateItem.selected {
+    opacity: 1;
+    transform: scale(1.05);
+}
+
+.dayLabel {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.selected .dayLabel {
+    color: var(--primary);
+}
+
+.dateCircle {
+    width: 48px;
+    height: 56px;
+    border-radius: 12px;
+    background-color: var(--card-bg);
+    border: 1px solid var(--card-border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.selected .dateCircle {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+}
+
+.today .dateCircle {
+    border-color: var(--foreground);
+}
+
+.weekday {
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+}
+
+.dayNumber {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+/* Status Indicators */
+.success .dateCircle {
+    border-color: #34C759;
+    /* Green */
+    background-color: rgba(50, 215, 75, 0.1);
+    color: #34C759;
+}
+
+.success.selected .dateCircle {
+    background-color: #34C759;
+    color: white;
+}
+
+.fail .dateCircle {
+    border-color: #FF3B30;
+    /* Red */
+    background-color: rgba(255, 59, 48, 0.1);
+    color: #FF3B30;
+}
+
+.fail.selected .dateCircle {
+    background-color: #FF3B30;
+    color: white;
+}
