@@ -15,11 +15,13 @@ export interface DailyProgress {
 export interface AppState {
     entries: Record<string, DailyProgress>;
     startDate: string;
-    startDateLocked: boolean; // New field
+    startDateLocked: boolean;
+    hasSeenOnboarding: boolean;
 }
 
 export const INITIAL_STATE: AppState = {
     entries: {},
     startDate: new Date().toISOString().split('T')[0],
     startDateLocked: false,
+    hasSeenOnboarding: false,
 };

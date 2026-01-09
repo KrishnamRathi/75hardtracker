@@ -9,8 +9,10 @@ import { Dumbbell, Sun, BookOpen, Carrot, Camera, RotateCcw } from 'lucide-react
 import styles from './page.module.css';
 import clsx from 'clsx';
 
+import Onboarding from '@/components/Onboarding';
+
 export default function Home() {
-  const { entries, getEntry, toggleHabit, updateWater, startDate, setStartDate, startDateLocked, resetChallenge, setPhoto } = useHabit();
+  const { entries, getEntry, toggleHabit, updateWater, startDate, setStartDate, startDateLocked, resetChallenge, setPhoto, hasSeenOnboarding, completeOnboarding } = useHabit();
   const [currentDate, setCurrentDate] = useState<string>('');
   const dateInputRef = React.useRef<HTMLInputElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -21,6 +23,10 @@ export default function Home() {
   }, []);
 
   if (!currentDate) return null;
+
+  if (!hasSeenOnboarding) {
+    return <Onboarding onComplete={completeOnboarding} />;
+  }
 
   const entry = getEntry(currentDate);
 

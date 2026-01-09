@@ -10,6 +10,7 @@ interface HabitContextType extends AppState {
     getEntry: (date: string) => DailyProgress;
     setStartDate: (date: string) => void;
     resetChallenge: () => void;
+    completeOnboarding: () => void;
 }
 
 const HabitContext = createContext<HabitContextType | null>(null);
@@ -105,6 +106,10 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
         setState(prev => ({ ...prev, startDate: date, startDateLocked: true }));
     };
 
+    const completeOnboarding = () => {
+        setState(prev => ({ ...prev, hasSeenOnboarding: true }));
+    };
+
     const resetChallenge = () => {
         setState(INITIAL_STATE);
         localStorage.removeItem(STORAGE_KEY);
@@ -120,7 +125,8 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
             setPhoto,
             getEntry,
             setStartDate,
-            resetChallenge
+            resetChallenge,
+            completeOnboarding
         }}>
             {children}
         </HabitContext.Provider>
