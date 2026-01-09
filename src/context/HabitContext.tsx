@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { AppState, DailyProgress, INITIAL_STATE } from '@/types';
+import { AppState, DailyProgress, DailyHabit, INITIAL_STATE } from '@/types';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, setDoc, onSnapshot } from 'firebase/firestore';
@@ -14,6 +14,8 @@ interface HabitContextType extends AppState {
     setStartDate: (date: string) => void;
     resetChallenge: () => void;
     completeOnboarding: () => void;
+    toggleDailyHabit: (date: string, habit: keyof DailyHabit) => void;
+    getDailyHabitEntry: (date: string) => DailyHabit;
     user: User | null;
     loading: boolean;
     error: string | null;
@@ -297,6 +299,51 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
+    // Daily Habit Tracker Functions
+    const getDailyHabitEntry = (date: string): DailyHabit => {
+        if (!state.habitEntries) {
+            return {
+                date,
+                workOnGoals: false,
+                skinCareMorning: false,
+                skinCareNight: false,
+                brushTeethNight: false,
+                meditation: false,
+                guitar: false
+            };
+        }
+        return state.habitEntries[date] || {
+            date,
+            workOnGoals: false,
+            skinCareMorning: false,
+            skinCareNight: false,
+            brushTeethNight: false,
+            meditation: false,
+            guitar: false
+        };
+    };
+
+    const toggleDailyHabit = (date: string, habit: keyof DailyHabit) => {
+        if (habit === 'date') return; // Don't toggle the date field
+
+        setState(prev => {
+            const currentEntry = getDailyHabitEntry(date);
+            const updatedEntry = {
+                ...currentEntry,
+                [habit]: !currentEntry[habit]
+            };
+
+            const newHabitEntries = {
+                ...(prev.habitEntries || {}),
+                [date]: updatedEntry
+            };
+
+            const newState = { ...prev, habitEntries: newHabitEntries };
+            syncToFirestore(newState);
+            return newState;
+        });
+    };
+
     if (loading) return null; // Or loading spinner
 
     return (
@@ -311,6 +358,8 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
             completeOnboarding,
             setUserName,
             logout,
+            toggleDailyHabit,
+            getDailyHabitEntry,
             user,
             loading,
             error

@@ -9,11 +9,21 @@ export interface DailyProgress {
     water: number; // in oz, target 128
     photo: boolean;
     photoData?: string | null; // Base64 data
-    notes?: string;
+}
+
+export interface DailyHabit {
+    date: string;
+    workOnGoals: boolean;
+    skinCareMorning: boolean;
+    skinCareNight: boolean;
+    brushTeethNight: boolean;
+    meditation: boolean;
+    guitar: boolean;
 }
 
 export interface AppState {
     entries: Record<string, DailyProgress>;
+    habitEntries: Record<string, DailyHabit>;
     startDate: string;
     startDateLocked: boolean;
     hasSeenOnboarding: boolean;
@@ -22,6 +32,7 @@ export interface AppState {
 
 export const INITIAL_STATE: AppState = {
     entries: {},
+    habitEntries: {},
     startDate: new Date().toISOString().split('T')[0],
     startDateLocked: false,
     hasSeenOnboarding: false,
