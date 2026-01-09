@@ -12,6 +12,7 @@ interface DateStripProps {
 
 import { useHabit } from '@/context/HabitContext';
 import { checkCompletion } from '@/utils/completion';
+import { getIndiaDate } from '@/utils/dateUtils';
 
 // inside component
 export default function DateStrip({
@@ -22,16 +23,18 @@ export default function DateStrip({
 }: DateStripProps) {
     const scrollRef = useRef<HTMLDivElement>(null);
     const { getEntry } = useHabit();
-    const today = new Date().toISOString().split('T')[0];
+    const today = getIndiaDate();
 
     // Generate dates
     const dates = React.useMemo(() => {
+        if (!startDate) return [];
         const list = [];
         const start = new Date(startDate);
         for (let i = 0; i < daysCount; i++) {
             const d = new Date(start);
             d.setDate(start.getDate() + i);
-            list.push(d.toISOString().split('T')[0]);
+            const dateStr = getIndiaDate(d);
+            if (dateStr) list.push(dateStr);
         }
         return list;
     }, [startDate, daysCount]);

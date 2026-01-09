@@ -5,13 +5,14 @@ import TaskCard from '@/components/TaskCard';
 import BottomNav from '@/components/BottomNav';
 import { Target, Sun, Moon, Sparkles, Brain, Music } from 'lucide-react';
 import styles from '../page.module.css';
+import { getIndiaDate } from '@/utils/dateUtils';
 
 export default function Habits() {
     const { getDailyHabitEntry, toggleDailyHabit, user, loading } = useHabit();
     const [currentDate, setCurrentDate] = useState<string>('');
 
     useEffect(() => {
-        setCurrentDate(new Date().toISOString().split('T')[0]);
+        setCurrentDate(getIndiaDate());
     }, []);
 
     if (loading) return null;

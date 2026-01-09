@@ -4,6 +4,7 @@ import { useHabit } from '@/context/HabitContext';
 import styles from './Heatmap.module.css';
 import clsx from 'clsx';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { getIndiaDate } from '@/utils/dateUtils';
 
 export default function HabitHeatmap() {
     const { getDailyHabitEntry } = useHabit();
@@ -41,16 +42,18 @@ export default function HabitHeatmap() {
         const list = [];
         const year = selectedDate.getFullYear();
         const month = selectedDate.getMonth();
-        const today = new Date().toISOString().split('T')[0];
+        const todayStr = getIndiaDate();
 
         // Get total days in selected month
         const daysInMonth = new Date(year, month + 1, 0).getDate();
 
         for (let i = 1; i <= daysInMonth; i++) {
             const currentDate = new Date(year, month, i);
-            const dateStr = currentDate.toISOString().split('T')[0];
+            const dateStr = getIndiaDate(currentDate);
 
-            const isFuture = dateStr > today;
+            if (!dateStr) continue;
+
+            const isFuture = dateStr > todayStr;
             const entry = getDailyHabitEntry(dateStr);
             const isComplete = checkHabitCompletion(entry);
 

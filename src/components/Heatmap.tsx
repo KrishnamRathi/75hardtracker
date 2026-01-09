@@ -6,6 +6,7 @@ import clsx from 'clsx';
 import { DailyProgress } from '@/types';
 
 import { checkCompletion } from '@/utils/completion';
+import { getIndiaDate } from '@/utils/dateUtils';
 
 export default function Heatmap() {
     const { startDate, getEntry } = useHabit();
@@ -14,15 +15,15 @@ export default function Heatmap() {
     const days = React.useMemo(() => {
         const list = [];
         const start = new Date(startDate);
-        const today = new Date().toISOString().split('T')[0];
+        const todayStr = getIndiaDate();
 
         for (let i = 0; i < 75; i++) {
             const d = new Date(start);
             d.setDate(start.getDate() + i);
-            const dateStr = d.toISOString().split('T')[0];
+            const dateStr = getIndiaDate(d);
 
             // Determine status
-            const isFuture = dateStr > today;
+            const isFuture = dateStr > todayStr;
             const entry = getEntry(dateStr);
             const isComplete = checkCompletion(entry);
 

@@ -5,6 +5,7 @@ import { AppState, DailyProgress, DailyHabit, INITIAL_STATE } from '@/types';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, setDoc, onSnapshot } from 'firebase/firestore';
+import { getIndiaDate } from '@/utils/dateUtils';
 
 interface HabitContextType extends AppState {
     toggleHabit: (date: string, habit: keyof DailyProgress | 'workout1' | 'workout2') => void;
@@ -98,12 +99,13 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
 
                 // Auto-populate userName from OAuth on first setup
                 const initialUserName = user.displayName || '';
-                const docToCreate = { ...initialRest, userName: initialUserName };
+                const todayIST = getIndiaDate();
+                const docToCreate = { ...initialRest, userName: initialUserName, startDate: todayIST };
 
                 setDoc(docRef, docToCreate, { merge: true });
 
-                // Update local state with the userName
-                setState(prev => ({ ...prev, userName: initialUserName }));
+                // Update local state with the userName and startDate
+                setState(prev => ({ ...prev, userName: initialUserName, startDate: todayIST }));
             }
         }, (err) => {
             console.error("Firestore Error:", err);
@@ -267,6 +269,7 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
         setState(prev => {
             const newState: AppState = {
                 ...INITIAL_STATE,
+                startDate: getIndiaDate(),       // Reset to today in IST
                 habitEntries: prev.habitEntries, // Preserve habits
                 userName: prev.userName,         // Preserve name
                 hasSeenOnboarding: prev.hasSeenOnboarding // Preserve onboarding status

@@ -8,6 +8,7 @@ import DateStrip from '@/components/DateStrip';
 import { Dumbbell, Sun, BookOpen, Carrot, Camera, RotateCcw, Brain } from 'lucide-react';
 import styles from './page.module.css';
 import clsx from 'clsx';
+import { getIndiaDate } from '@/utils/dateUtils';
 
 import Onboarding from '@/components/Onboarding';
 import Login from '@/components/Login';
@@ -20,8 +21,8 @@ export default function Home() {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Client-side date init
-    setCurrentDate(new Date().toISOString().split('T')[0]);
+    // Client-side date init in IST
+    setCurrentDate(getIndiaDate());
   }, []);
 
   if (loading) return null; // Or spinner
@@ -34,7 +35,7 @@ export default function Home() {
   }
 
   const entry = getEntry(currentDate);
-  const today = new Date().toISOString().split('T')[0];
+  const today = getIndiaDate();
   const isToday = currentDate === today;
 
   // Calculate remaining days based on incomplete tasks
@@ -43,9 +44,11 @@ export default function Home() {
     const totalDays = 75;
 
     for (let i = 0; i < totalDays; i++) {
+      if (!startDate) break;
       const date = new Date(startDate);
       date.setDate(date.getDate() + i);
-      const dateStr = date.toISOString().split('T')[0];
+      const dateStr = getIndiaDate(date);
+      if (!dateStr) continue;
       const dayEntry = getEntry(dateStr);
 
       // Check if all tasks are complete for this day

@@ -33,7 +33,7 @@ export interface AppState {
 export const INITIAL_STATE: AppState = {
     entries: {},
     habitEntries: {},
-    startDate: new Date().toISOString().split('T')[0],
+    startDate: '', // Will be initialized to today's date in IST
     startDateLocked: false,
     hasSeenOnboarding: false,
     userName: '',
