@@ -244,6 +244,11 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
 
     const setStartDate = (date: string) => {
         if (state.startDateLocked) return;
+        const today = getIndiaDate();
+        if (date < today) {
+            alert("Start date cannot be in the past.");
+            return;
+        }
         setState(prev => {
             const newState = { ...prev, startDate: date, startDateLocked: true };
             syncToFirestore(newState);

@@ -147,6 +147,7 @@ export default function Home() {
               <input
                 type="date"
                 ref={dateInputRef}
+                min={today}
                 style={{ opacity: 0, position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }}
                 onChange={handleDateChange}
                 value={startDate}
