@@ -15,6 +15,7 @@ interface HabitContextType extends AppState {
     setStartDate: (date: string) => void;
     resetChallenge: () => void;
     completeOnboarding: () => void;
+    completeHabitOnboarding: () => void;
     toggleDailyHabit: (date: string, habit: keyof DailyHabit) => void;
     getDailyHabitEntry: (date: string) => DailyHabit;
     user: User | null;
@@ -43,10 +44,14 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
             }
         });
 
-        // Initial LocalStorage check for onboarding (device specific)
         const localOnboarding = localStorage.getItem('hasSeenOnboarding');
-        if (localOnboarding === 'true') {
-            setState(prev => ({ ...prev, hasSeenOnboarding: true }));
+        const localHabitOnboarding = localStorage.getItem('hasSeenHabitOnboarding');
+        if (localOnboarding === 'true' || localHabitOnboarding === 'true') {
+            setState(prev => ({
+                ...prev,
+                hasSeenOnboarding: localOnboarding === 'true',
+                hasSeenHabitOnboarding: localHabitOnboarding === 'true'
+            }));
         }
 
         return () => unsubscribe();
@@ -85,17 +90,18 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
                     setDoc(docRef, { userName: finalUserName }, { merge: true });
                 }
 
-                // MERGE: Keep local hasSeenOnboarding, take everything else from Firestore
+                // MERGE: Keep local hasSeenOnboarding/hasSeenHabitOnboarding, take everything else from Firestore
                 setState(prev => ({
                     ...firestoreData,
                     entries: hydratedEntries,
                     userName: finalUserName,
-                    hasSeenOnboarding: prev.hasSeenOnboarding // Keep local truth
+                    hasSeenOnboarding: prev.hasSeenOnboarding, // Keep local truth
+                    hasSeenHabitOnboarding: prev.hasSeenHabitOnboarding // Keep local truth
                 }));
             } else {
                 // Initialize doc if not exists
                 // Don't sync hasSeenOnboarding even here
-                const { hasSeenOnboarding, ...initialRest } = INITIAL_STATE;
+                const { hasSeenOnboarding, hasSeenHabitOnboarding, ...initialRest } = INITIAL_STATE;
 
                 // Auto-populate userName from OAuth on first setup
                 const initialUserName = user.displayName || '';
@@ -124,8 +130,8 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
         if (!user) return;
         try {
             // Create a copy of state to clean up before saving
-            // EXCLUDE hasSeenOnboarding from Firestore
-            const { hasSeenOnboarding, ...stateToSave } = newState;
+            // EXCLUDE hasSeenOnboarding/hasSeenHabitOnboarding from Firestore
+            const { hasSeenOnboarding, hasSeenHabitOnboarding, ...stateToSave } = newState;
 
             // Re-assign entries object to avoid mutating original
             const entriesToSave = { ...stateToSave.entries };
@@ -277,7 +283,8 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
                 startDate: getIndiaDate(),       // Reset to today in IST
                 habitEntries: prev.habitEntries, // Preserve habits
                 userName: prev.userName,         // Preserve name
-                hasSeenOnboarding: prev.hasSeenOnboarding // Preserve onboarding status
+                hasSeenOnboarding: prev.hasSeenOnboarding, // Preserve onboarding status
+                hasSeenHabitOnboarding: prev.hasSeenHabitOnboarding // Preserve habit onboarding status
             };
 
             // Re-check onboarding from localStorage for extra safety
@@ -296,6 +303,14 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
         setState(prev => {
             const newState = { ...prev, hasSeenOnboarding: true };
             // syncToFirestore(newState); // No need to sync this anymore
+            return newState;
+        });
+    };
+
+    const completeHabitOnboarding = () => {
+        localStorage.setItem('hasSeenHabitOnboarding', 'true');
+        setState(prev => {
+            const newState = { ...prev, hasSeenHabitOnboarding: true };
             return newState;
         });
     };
@@ -372,6 +387,7 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
             setStartDate,
             resetChallenge,
             completeOnboarding,
+            completeHabitOnboarding,
             setUserName,
             logout,
             toggleDailyHabit,

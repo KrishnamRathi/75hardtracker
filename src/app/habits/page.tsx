@@ -6,9 +6,10 @@ import BottomNav from '@/components/BottomNav';
 import { Target, Sun, Moon, Sparkles, Brain, Music } from 'lucide-react';
 import styles from '../page.module.css';
 import { getIndiaDate } from '@/utils/dateUtils';
+import HabitOnboarding from '@/components/HabitOnboarding';
 
 export default function Habits() {
-    const { getDailyHabitEntry, toggleDailyHabit, user, loading } = useHabit();
+    const { getDailyHabitEntry, toggleDailyHabit, user, loading, hasSeenHabitOnboarding, completeHabitOnboarding } = useHabit();
     const [currentDate, setCurrentDate] = useState<string>('');
 
     useEffect(() => {
@@ -18,6 +19,10 @@ export default function Habits() {
     if (loading) return null;
     if (!user) return null;
     if (!currentDate) return null;
+
+    if (!hasSeenHabitOnboarding) {
+        return <HabitOnboarding onComplete={completeHabitOnboarding} />;
+    }
 
     const entry = getDailyHabitEntry(currentDate);
 

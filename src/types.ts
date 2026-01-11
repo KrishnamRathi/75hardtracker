@@ -27,6 +27,7 @@ export interface AppState {
     startDate: string;
     startDateLocked: boolean;
     hasSeenOnboarding: boolean;
+    hasSeenHabitOnboarding: boolean;
     userName?: string;
 }
 
@@ -36,5 +37,6 @@ export const INITIAL_STATE: AppState = {
     startDate: '', // Will be initialized to today's date in IST
     startDateLocked: false,
     hasSeenOnboarding: false,
+    hasSeenHabitOnboarding: false,
     userName: '',
 };
