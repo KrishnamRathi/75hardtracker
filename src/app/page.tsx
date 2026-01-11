@@ -36,7 +36,7 @@ export default function Home() {
 
   const entry = getEntry(currentDate);
   const today = getIndiaDate();
-  const isToday = currentDate === today;
+  // const isToday = currentDate === today;
 
   // Calculate remaining days based on incomplete tasks
   const calculateRemainingDays = () => {
@@ -69,7 +69,7 @@ export default function Home() {
   };
 
   const handleWaterAdd = () => {
-    if (!isToday) return; // Disable for non-current dates
+    // if (!isToday) return; // Disable for non-current dates
     const newAmount = Math.min(entry.water + 500, 4000);
     updateWater(currentDate, newAmount);
   };
@@ -81,7 +81,7 @@ export default function Home() {
   };
 
   const handlePhotoClick = () => {
-    if (!isToday) return; // Disable for non-current dates
+    // if (!isToday) return; // Disable for non-current dates
     if (entry.photo) {
       fileInputRef.current?.click();
     } else {
@@ -102,7 +102,7 @@ export default function Home() {
   };
 
   const handleTaskClick = (habit: 'workout1' | 'workout2' | 'reading' | 'diet' | 'meditation') => {
-    if (!isToday) return; // Disable for non-current dates
+    // if (!isToday) return; // Disable for non-current dates
     toggleHabit(currentDate, habit);
   };
 
@@ -178,7 +178,7 @@ export default function Home() {
 
       {/* Grid */}
       <div className={styles.grid}>
-        {!isToday && (
+        {/* {!isToday && (
           <div style={{
             padding: '12px',
             background: 'rgba(255, 165, 0, 0.1)',
@@ -190,7 +190,7 @@ export default function Home() {
           }}>
             ⚠️ You can only edit tasks for today. Switch to today's date to track your progress.
           </div>
-        )}
+        )} */}
 
         <TaskCard
           title="First Workout"
