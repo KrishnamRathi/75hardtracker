@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { AppState, DailyProgress, DailyHabit, INITIAL_STATE } from '@/types';
+import { AppState, DailyProgress, DailyHabit, HabitCategory, INITIAL_STATE } from '@/types';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, setDoc, onSnapshot } from 'firebase/firestore';
@@ -16,8 +16,11 @@ interface HabitContextType extends AppState {
     resetChallenge: () => void;
     completeOnboarding: () => void;
     completeHabitOnboarding: () => void;
-    toggleDailyHabit: (date: string, habit: keyof DailyHabit) => void;
+    toggleDailyHabit: (date: string, habitId: string) => void;
     getDailyHabitEntry: (date: string) => DailyHabit;
+    addHabitCategory: (category: Omit<HabitCategory, 'id'>) => void;
+    removeHabitCategory: (id: string) => void;
+    reorderHabitCategories: (newOrder: HabitCategory[]) => void;
     user: User | null;
     loading: boolean;
     error: string | null;
@@ -335,33 +338,20 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
     // Daily Habit Tracker Functions
     const getDailyHabitEntry = (date: string): DailyHabit => {
         if (!state.habitEntries) {
-            return {
-                date,
-                workOnGoals: false,
-                skinCareMorning: false,
-                skinCareNight: false,
-                brushTeethNight: false,
-                guitar: false
-            };
+            return { date };
         }
-        return state.habitEntries[date] || {
-            date,
-            workOnGoals: false,
-            skinCareMorning: false,
-            skinCareNight: false,
-            brushTeethNight: false,
-            guitar: false
-        };
+        return state.habitEntries[date] || { date };
     };
 
-    const toggleDailyHabit = (date: string, habit: keyof DailyHabit) => {
-        if (habit === 'date') return; // Don't toggle the date field
+    const toggleDailyHabit = (date: string, habitId: string) => {
+        if (habitId === 'date') return; // Don't toggle the date field
 
         setState(prev => {
             const currentEntry = getDailyHabitEntry(date);
+            const currentValue = currentEntry[habitId];
             const updatedEntry = {
                 ...currentEntry,
-                [habit]: !currentEntry[habit]
+                [habitId]: typeof currentValue === 'boolean' ? !currentValue : true
             };
 
             const newHabitEntries = {
@@ -370,6 +360,36 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
             };
 
             const newState = { ...prev, habitEntries: newHabitEntries };
+            syncToFirestore(newState);
+            return newState;
+        });
+    };
+
+    const addHabitCategory = (category: Omit<HabitCategory, 'id'>) => {
+        setState(prev => {
+            const id = `custom_${Date.now()}`;
+            const newCategory: HabitCategory = { ...category, id };
+            const currentCategories = prev.habitCategories || [];
+            const newCategories = [...currentCategories, newCategory];
+            const newState = { ...prev, habitCategories: newCategories };
+            syncToFirestore(newState);
+            return newState;
+        });
+    };
+
+    const removeHabitCategory = (id: string) => {
+        setState(prev => {
+            const currentCategories = prev.habitCategories || [];
+            const newCategories = currentCategories.filter(cat => cat.id !== id);
+            const newState = { ...prev, habitCategories: newCategories };
+            syncToFirestore(newState);
+            return newState;
+        });
+    };
+
+    const reorderHabitCategories = (newOrder: HabitCategory[]) => {
+        setState(prev => {
+            const newState = { ...prev, habitCategories: newOrder };
             syncToFirestore(newState);
             return newState;
         });
@@ -392,6 +412,9 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
             logout,
             toggleDailyHabit,
             getDailyHabitEntry,
+            addHabitCategory,
+            removeHabitCategory,
+            reorderHabitCategories,
             user,
             loading,
             error

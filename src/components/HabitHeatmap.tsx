@@ -7,18 +7,13 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getIndiaDate } from '@/utils/dateUtils';
 
 export default function HabitHeatmap() {
-    const { getDailyHabitEntry } = useHabit();
+    const { getDailyHabitEntry, habitCategories } = useHabit();
     const [selectedDate, setSelectedDate] = useState(new Date());
 
     const checkHabitCompletion = (entry: ReturnType<typeof getDailyHabitEntry>): boolean => {
         if (!entry) return false;
-        return (
-            entry.workOnGoals &&
-            entry.skinCareMorning &&
-            entry.skinCareNight &&
-            entry.brushTeethNight &&
-            entry.guitar
-        );
+        // Check if all habits in categories are completed
+        return habitCategories.every(category => entry[category.id] === true);
     };
 
     const goToPreviousMonth = () => {

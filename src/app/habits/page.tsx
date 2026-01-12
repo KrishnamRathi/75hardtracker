@@ -3,14 +3,42 @@ import React, { useState, useEffect } from 'react';
 import { useHabit } from '@/context/HabitContext';
 import TaskCard from '@/components/TaskCard';
 import BottomNav from '@/components/BottomNav';
-import { Target, Sun, Moon, Sparkles, Brain, Music } from 'lucide-react';
+import ManageHabitsModal from '@/components/ManageHabitsModal';
+import { Target, Sun, Moon, Sparkles, Brain, Music, Heart, Star, Coffee, Book, Dumbbell, Settings, LucideIcon } from 'lucide-react';
 import styles from '../page.module.css';
 import { getIndiaDate } from '@/utils/dateUtils';
 import HabitOnboarding from '@/components/HabitOnboarding';
 
+// Icon mapping
+const ICON_MAP: Record<string, LucideIcon> = {
+    Target,
+    Sun,
+    Moon,
+    Sparkles,
+    Brain,
+    Music,
+    Heart,
+    Star,
+    Coffee,
+    Book,
+    Dumbbell,
+};
+
 export default function Habits() {
-    const { getDailyHabitEntry, toggleDailyHabit, user, loading, hasSeenHabitOnboarding, completeHabitOnboarding } = useHabit();
+    const {
+        getDailyHabitEntry,
+        toggleDailyHabit,
+        habitCategories,
+        addHabitCategory,
+        removeHabitCategory,
+        reorderHabitCategories,
+        user,
+        loading,
+        hasSeenHabitOnboarding,
+        completeHabitOnboarding
+    } = useHabit();
     const [currentDate, setCurrentDate] = useState<string>('');
+    const [isManageModalOpen, setIsManageModalOpen] = useState(false);
 
     useEffect(() => {
         setCurrentDate(getIndiaDate());
@@ -31,6 +59,34 @@ export default function Habits() {
             <header className={styles.header}>
                 <div className={styles.topRow}>
                     <h1 className="heading-lg" style={{ margin: 0 }}>Daily Habits</h1>
+                    <button
+                        onClick={() => setIsManageModalOpen(true)}
+                        style={{
+                            background: 'rgba(99, 102, 241, 0.1)',
+                            border: '1px solid rgba(99, 102, 241, 0.3)',
+                            borderRadius: '10px',
+                            padding: '8px 16px',
+                            color: 'var(--primary-color)',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(99, 102, 241, 0.15)';
+                            e.currentTarget.style.borderColor = 'var(--primary-color)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'rgba(99, 102, 241, 0.1)';
+                            e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.3)';
+                        }}
+                    >
+                        <Settings size={16} />
+                        Manage
+                    </button>
                 </div>
                 <div style={{
                     fontSize: '14px',
@@ -47,58 +103,33 @@ export default function Habits() {
             </header>
 
             <div className={styles.grid}>
-                <TaskCard
-                    title="Work on Goals"
-                    subtitle="Daily progress"
-                    icon={Target}
-                    completed={entry.workOnGoals}
-                    onClick={() => toggleDailyHabit(currentDate, 'workOnGoals')}
-                    colorClass="text-blue"
-                    actionLabel={entry.workOnGoals ? "Completed" : "Pending"}
-                />
+                {habitCategories?.map((category) => {
+                    const IconComponent = ICON_MAP[category.icon] || Target;
+                    const isCompleted = entry[category.id] === true;
 
-                <TaskCard
-                    title="Skin Care - Morning"
-                    subtitle="Morning routine"
-                    icon={Sun}
-                    completed={entry.skinCareMorning}
-                    onClick={() => toggleDailyHabit(currentDate, 'skinCareMorning')}
-                    colorClass="text-yellow"
-                    actionLabel={entry.skinCareMorning ? "Completed" : "Pending"}
-                />
-
-                <TaskCard
-                    title="Skin Care - Night"
-                    subtitle="Night routine"
-                    icon={Moon}
-                    completed={entry.skinCareNight}
-                    onClick={() => toggleDailyHabit(currentDate, 'skinCareNight')}
-                    colorClass="text-purple"
-                    actionLabel={entry.skinCareNight ? "Completed" : "Pending"}
-                />
-
-                <TaskCard
-                    title="Brush Teeth - Night"
-                    subtitle="Before bed"
-                    icon={Sparkles}
-                    completed={entry.brushTeethNight}
-                    onClick={() => toggleDailyHabit(currentDate, 'brushTeethNight')}
-                    colorClass="text-green"
-                    actionLabel={entry.brushTeethNight ? "Completed" : "Pending"}
-                />
-
-
-
-                <TaskCard
-                    title="Guitar"
-                    subtitle="Practice session"
-                    icon={Music}
-                    completed={entry.guitar}
-                    onClick={() => toggleDailyHabit(currentDate, 'guitar')}
-                    colorClass="text-blue"
-                    actionLabel={entry.guitar ? "Completed" : "Pending"}
-                />
+                    return (
+                        <TaskCard
+                            key={category.id}
+                            title={category.name}
+                            subtitle={category.subtitle}
+                            icon={IconComponent}
+                            completed={isCompleted}
+                            onClick={() => toggleDailyHabit(currentDate, category.id)}
+                            colorClass={category.colorClass}
+                            actionLabel={isCompleted ? "Completed" : "Pending"}
+                        />
+                    );
+                })}
             </div>
+
+            <ManageHabitsModal
+                isOpen={isManageModalOpen}
+                onClose={() => setIsManageModalOpen(false)}
+                categories={habitCategories || []}
+                onAdd={addHabitCategory}
+                onDelete={removeHabitCategory}
+                onReorder={reorderHabitCategories}
+            />
 
             <BottomNav />
         </main>
