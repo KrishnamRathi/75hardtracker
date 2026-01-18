@@ -6,7 +6,9 @@ import { auth, db, storage } from '@/lib/firebase';
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, onSnapshot, DocumentSnapshot, DocumentData } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { onAuthStateChanged, User, signOut, updateProfile } from 'firebase/auth';
+
 import { getIndiaDate } from '@/utils/dateUtils';
+import imageCompression from 'browser-image-compression';
 
 interface HabitContextType extends AppState {
     toggleHabit: (date: string, habit: keyof DailyProgress | 'workout1' | 'workout2') => void;
@@ -235,7 +237,26 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
         const storageRef = ref(storage, `users/${user.uid}/photos/${date}/${filename}`);
 
         try {
-            const snapshot = await uploadBytes(storageRef, file);
+            const options = {
+                maxSizeMB: 1,
+                maxWidthOrHeight: 1280,
+                useWebWorker: true,
+                initialQuality: 0.5 // Target 50% compression or better
+            };
+
+            let compressedFile = file;
+            try {
+                // Only compress images
+                if (file.type.startsWith('image/')) {
+                    console.log(`Original size: ${file.size / 1024 / 1024} MB`);
+                    compressedFile = await imageCompression(file, options);
+                    console.log(`Compressed size: ${compressedFile.size / 1024 / 1024} MB`);
+                }
+            } catch (err) {
+                console.warn("Compression failed, uploading original:", err);
+            }
+
+            const snapshot = await uploadBytes(storageRef, compressedFile);
             const downloadURL = await getDownloadURL(snapshot.ref);
 
             // Update Firestore
