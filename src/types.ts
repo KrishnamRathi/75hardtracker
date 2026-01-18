@@ -7,9 +7,8 @@ export interface DailyProgress {
     diet: boolean;
     reading: boolean; // 10 pages
     water: number; // in oz, target 128
-    photo: boolean;
+    photos: string[]; // Array of Firebase Storage URLs
     meditation: boolean;
-    photoData?: string | null; // Base64 data
 }
 
 export interface HabitCategory {

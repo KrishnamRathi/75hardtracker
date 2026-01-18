@@ -5,29 +5,46 @@ import TaskCard from '@/components/TaskCard';
 import WaterTracker from '@/components/WaterTracker';
 import BottomNav from '@/components/BottomNav';
 import DateStrip from '@/components/DateStrip';
-import { Dumbbell, Sun, BookOpen, Carrot, Camera, RotateCcw, Brain } from 'lucide-react';
+import { Dumbbell, Sun, BookOpen, Carrot, RotateCcw, Brain, Camera } from 'lucide-react';
 import styles from './page.module.css';
-import clsx from 'clsx';
 import { getIndiaDate } from '@/utils/dateUtils';
+import PhotoUploader from '@/components/PhotoUploader';
+import PhotoFAB, { PhotoFABRef } from '@/components/PhotoFAB';
 
 import Onboarding from '@/components/Onboarding';
 import Login from '@/components/Login';
 import SyncStatus from '@/components/SyncStatus';
 
 export default function Home() {
-  const { entries, getEntry, toggleHabit, updateWater, startDate, setStartDate, startDateLocked, resetChallenge, setPhoto, hasSeenOnboarding, completeOnboarding, user, loading, userName } = useHabit();
+  const {
+    entries,
+    getEntry,
+    toggleHabit,
+    updateWater,
+    startDate,
+    setStartDate,
+    startDateLocked,
+    resetChallenge,
+    uploadPhoto,
+    deletePhoto,
+    hasSeenOnboarding,
+    completeOnboarding,
+    user,
+    loading,
+    userName
+  } = useHabit();
+
   const [currentDate, setCurrentDate] = useState<string>('');
   const dateInputRef = React.useRef<HTMLInputElement>(null);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const photoFabRef = React.useRef<PhotoFABRef>(null);
 
   useEffect(() => {
     // Client-side date init in IST
     setCurrentDate(getIndiaDate());
   }, []);
 
-  if (loading) return null; // Or spinner
+  if (loading) return null;
   if (!user) return <Login />;
-
   if (!currentDate) return null;
 
   if (!hasSeenOnboarding) {
@@ -36,7 +53,6 @@ export default function Home() {
 
   const entry = getEntry(currentDate);
   const today = getIndiaDate();
-  // const isToday = currentDate === today;
 
   // Calculate remaining days based on incomplete tasks
   const calculateRemainingDays = () => {
@@ -57,8 +73,9 @@ export default function Home() {
         dayEntry.workouts.outdoor &&
         dayEntry.diet &&
         dayEntry.reading &&
-        dayEntry.photo &&
-        dayEntry.water >= 4000;
+        dayEntry.photos.length > 0 &&
+        dayEntry.water >= 4000 &&
+        dayEntry.meditation;
 
       if (isComplete) {
         completedDays++;
@@ -69,7 +86,6 @@ export default function Home() {
   };
 
   const handleWaterAdd = () => {
-    // if (!isToday) return; // Disable for non-current dates
     const newAmount = Math.min(entry.water + 500, 4000);
     updateWater(currentDate, newAmount);
   };
@@ -80,29 +96,7 @@ export default function Home() {
     }
   };
 
-  const handlePhotoClick = () => {
-    // if (!isToday) return; // Disable for non-current dates
-    if (entry.photo) {
-      fileInputRef.current?.click();
-    } else {
-      fileInputRef.current?.click();
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setPhoto(currentDate, true, base64String);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   const handleTaskClick = (habit: 'workout1' | 'workout2' | 'reading' | 'diet' | 'meditation') => {
-    // if (!isToday) return; // Disable for non-current dates
     toggleHabit(currentDate, habit);
   };
 
@@ -178,20 +172,6 @@ export default function Home() {
 
       {/* Grid */}
       <div className={styles.grid}>
-        {/* {!isToday && (
-          <div style={{
-            padding: '12px',
-            background: 'rgba(255, 165, 0, 0.1)',
-            borderRadius: '12px',
-            marginBottom: '16px',
-            textAlign: 'center',
-            color: 'var(--text-secondary)',
-            fontSize: '14px'
-          }}>
-            ⚠️ You can only edit tasks for today. Switch to today's date to track your progress.
-          </div>
-        )} */}
-
         <TaskCard
           title="First Workout"
           subtitle="45 min"
@@ -230,20 +210,19 @@ export default function Home() {
           colorClass="text-green"
         />
 
+        <TaskCard
+          title="Progress Photo"
+          subtitle="Physical tracking"
+          icon={Camera}
+          completed={entry.photos.length > 0}
+          onClick={() => photoFabRef.current?.open()}
+          colorClass="text-purple"
+        />
+
         <WaterTracker
           current={entry.water}
           target={4000}
           onAdd={handleWaterAdd}
-        />
-
-        <TaskCard
-          title="Progress Photo"
-          subtitle="Take a selfie"
-          icon={Camera}
-          completed={entry.photo}
-          onClick={handlePhotoClick}
-          colorClass="text-purple"
-          actionLabel={entry.photo ? "Retake" : "Camera"}
         />
 
         <TaskCard
@@ -255,16 +234,19 @@ export default function Home() {
           colorClass="text-orange"
           actionLabel={entry.meditation ? "Completed" : "Pending"}
         />
+      </div>
 
-        <input
-          type="file"
-          accept="image/*"
-          capture="user"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          style={{ display: 'none' }}
+      <div style={{ marginTop: 24 }}>
+        <h2 className="heading-lg" style={{ marginBottom: 16 }}>Today's Photos</h2>
+        <PhotoUploader
+          photos={entry.photos}
+          onUpload={(file) => uploadPhoto(currentDate, file)}
+          onDelete={(url) => deletePhoto(currentDate, url)}
+          variant="grid-only"
         />
       </div>
+
+      <PhotoFAB ref={photoFabRef} onUpload={(file) => uploadPhoto(currentDate, file)} />
 
       <BottomNav />
     </main>

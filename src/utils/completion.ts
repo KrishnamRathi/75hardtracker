@@ -7,7 +7,7 @@ export function checkCompletion(entry: DailyProgress | undefined): boolean {
         entry.workouts.outdoor &&
         entry.diet &&
         entry.reading &&
-        entry.photo &&
+        entry.photos.length > 0 &&
         entry.water >= 4000 &&
         entry.meditation
     );

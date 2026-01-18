@@ -1,0 +1,87 @@
+.container {
+    position: fixed;
+    bottom: 100px;
+    /* Above BottomNav (80px) */
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.fab {
+    width: 48px;
+    height: 48px;
+    border-radius: 24px;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    background: var(--primary);
+    color: white;
+}
+
+.main {
+    width: 56px;
+    height: 56px;
+    border-radius: 28px;
+    background: var(--primary);
+    position: relative;
+    z-index: 2;
+}
+
+.main.active {
+    background: var(--danger);
+    transform: rotate(45deg);
+    /* Optional, but standard for FAB toggles */
+}
+
+.plusIcon {
+    transition: transform 0.3s;
+}
+
+.options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: absolute;
+    bottom: 70px;
+}
+
+.options.visible {
+    pointer-events: auto;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.option {
+    background: #2C2C2E;
+    color: var(--primary);
+}
+
+.option:hover {
+    background: #3A3A3C;
+    transform: scale(1.1);
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}

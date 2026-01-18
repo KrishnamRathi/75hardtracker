@@ -2,15 +2,17 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { AppState, DailyProgress, DailyHabit, HabitCategory, INITIAL_STATE } from '@/types';
-import { auth, db } from '@/lib/firebase';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, setDoc, onSnapshot } from 'firebase/firestore';
+import { auth, db, storage } from '@/lib/firebase';
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, onSnapshot, DocumentSnapshot, DocumentData } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { onAuthStateChanged, User, signOut, updateProfile } from 'firebase/auth';
 import { getIndiaDate } from '@/utils/dateUtils';
 
 interface HabitContextType extends AppState {
     toggleHabit: (date: string, habit: keyof DailyProgress | 'workout1' | 'workout2') => void;
     updateWater: (date: string, amount: number) => void;
-    setPhoto: (date: string, hasPhoto: boolean, data?: string | null) => void;
+    uploadPhoto: (date: string, file: File) => Promise<string>;
+    deletePhoto: (date: string, photoUrl: string) => Promise<void>;
     getEntry: (date: string) => DailyProgress;
     setStartDate: (date: string) => void;
     resetChallenge: () => void;
@@ -65,24 +67,13 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
         if (!user) return;
 
         const docRef = doc(db, 'users', user.uid, 'challenge', 'data');
-        const unsub = onSnapshot(docRef, (snap) => {
+        const unsub = onSnapshot(docRef, (snap: DocumentSnapshot<DocumentData>) => {
             setError(null); // Clear error on success
             if (snap.exists()) {
                 const firestoreData = snap.data() as AppState;
 
-                // Hydrate photos from localStorage
+                // Hydrate photos from localStorage - REMOVED legacy single photo logic
                 const hydratedEntries = { ...firestoreData.entries };
-                Object.keys(hydratedEntries).forEach(date => {
-                    if (hydratedEntries[date].photo) {
-                        const localPhotoKey = `photo_${user.uid}_${date}`;
-                        try {
-                            const localPhoto = localStorage.getItem(localPhotoKey);
-                            if (localPhoto) {
-                                hydratedEntries[date].photoData = localPhoto;
-                            }
-                        } catch (e) { console.error(e) }
-                    }
-                });
 
                 // Auto-populate userName from OAuth if not set
                 let finalUserName = firestoreData.userName;
@@ -139,14 +130,13 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
             // Re-assign entries object to avoid mutating original
             const entriesToSave = { ...stateToSave.entries };
 
-            // Strip photoData to avoid size limits and save to localStorage instead
+            // Strip photoData to avoid size limits and save to localStorage instead - REMOVED legacy logic
+            /*
             Object.keys(entriesToSave).forEach(date => {
                 const entry = entriesToSave[date];
-                if (entry.photoData) {
-                    // Make sure it's null in Firestore
-                    entriesToSave[date] = { ...entry, photoData: null };
-                }
+                // Legacy cleanup if needed
             });
+            */
 
             // @ts-ignore - we are intentionally saving a partial object (without hasSeenOnboarding)
             const finalDoc = { ...stateToSave, entries: entriesToSave };
@@ -162,14 +152,21 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
         }
     };
     const getEntry = (date: string): DailyProgress => {
-        return state.entries[date] || {
-            date,
-            workouts: { indoor: false, outdoor: false },
-            diet: false,
-            reading: false,
-            water: 0,
-            photo: false,
-            meditation: false
+        const entry = state.entries[date];
+        if (!entry) {
+            return {
+                date,
+                workouts: { indoor: false, outdoor: false },
+                diet: false,
+                reading: false,
+                water: 0,
+                photos: [],
+                meditation: false
+            };
+        }
+        return {
+            ...entry,
+            photos: entry.photos || []
         };
     };
 
@@ -181,7 +178,7 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
                 diet: false,
                 reading: false,
                 water: 0,
-                photo: false,
+                photos: [],
                 meditation: false
             };
 
@@ -220,7 +217,7 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
             }
             if (habit === 'diet') return { diet: !curr.diet };
             if (habit === 'reading') return { reading: !curr.reading };
-            if (habit === 'photo') return { photo: !curr.photo };
+            // if (habit === 'photo') return { photo: !curr.photo }; // REMOVED
             if (habit === 'meditation') return { meditation: !curr.meditation };
             return {};
         });
@@ -230,25 +227,45 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
         updateEntry(date, { water: amount });
     };
 
-    const setPhoto = (date: string, hasPhoto: boolean, data?: string | null) => {
-        if (!user) return;
+    const uploadPhoto = async (date: string, file: File): Promise<string> => {
+        if (!user) throw new Error("User not authenticated");
 
-        // 1. Save to LocalStorage
-        const localPhotoKey = `photo_${user.uid}_${date}`;
-        if (hasPhoto && data) {
-            try {
-                localStorage.setItem(localPhotoKey, data);
-            } catch (e) {
-                console.error("Failed to save photo to localStorage", e);
-                alert("Storage full! Cannot save photo.");
-                return;
-            }
-        } else {
-            localStorage.removeItem(localPhotoKey);
+        const timestamp = Date.now();
+        const filename = `${timestamp}_${file.name}`;
+        const storageRef = ref(storage, `users/${user.uid}/photos/${date}/${filename}`);
+
+        try {
+            const snapshot = await uploadBytes(storageRef, file);
+            const downloadURL = await getDownloadURL(snapshot.ref);
+
+            // Update Firestore
+            const entry = getEntry(date);
+            const newPhotos = [...(entry.photos || []), downloadURL];
+            updateEntry(date, { photos: newPhotos });
+
+            return downloadURL;
+        } catch (error) {
+            console.error("Error uploading photo:", error);
+            throw error;
         }
+    };
 
-        // 2. Update Context state (for immediate UI) AND sync to Firestore (stripped)
-        updateEntry(date, { photo: hasPhoto, photoData: data }); // Context keeps data for UI
+    const deletePhoto = async (date: string, photoUrl: string) => {
+        if (!user) throw new Error("User not authenticated");
+
+        try {
+            // Delete from Storage
+            const storageRef = ref(storage, photoUrl);
+            await deleteObject(storageRef);
+
+            // Update Firestore
+            const entry = getEntry(date);
+            const newPhotos = (entry.photos || []).filter(url => url !== photoUrl);
+            updateEntry(date, { photos: newPhotos });
+        } catch (error) {
+            console.error("Error deleting photo:", error);
+            throw error;
+        }
     };
 
     const setStartDate = (date: string) => {
@@ -402,7 +419,8 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
             ...state,
             toggleHabit,
             updateWater,
-            setPhoto,
+            uploadPhoto,
+            deletePhoto,
             getEntry,
             setStartDate,
             resetChallenge,

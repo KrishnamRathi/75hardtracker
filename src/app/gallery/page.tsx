@@ -6,11 +6,12 @@ import { DailyProgress } from '@/types';
 
 export default function Gallery() {
     const { entries, startDate } = useHabit();
-    const [selectedPhoto, setSelectedPhoto] = useState<DailyProgress | null>(null);
+    const [selectedPhoto, setSelectedPhoto] = useState<{ date: string; url: string } | null>(null);
 
     // Get all photos
     const photos = Object.values(entries)
-        .filter(e => e.photo && e.photoData)
+        .filter(e => e.photos && e.photos.length > 0)
+        .flatMap(e => e.photos.map(url => ({ date: e.date, url })))
         .sort((a, b) => a.date.localeCompare(b.date));
 
     // Calculate day number relative to start date
@@ -42,7 +43,7 @@ export default function Gallery() {
                 }}>
                     {photos.map((item) => (
                         <div
-                            key={item.date}
+                            key={`${item.date}-${item.url}`}
                             onClick={() => setSelectedPhoto(item)}
                             style={{
                                 position: 'relative',
@@ -55,7 +56,7 @@ export default function Gallery() {
                         >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
-                                src={item.photoData || ''}
+                                src={item.url}
                                 alt={`Day ${getDayNum(item.date)}`}
                                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                             />
@@ -98,7 +99,7 @@ export default function Gallery() {
                 >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                        src={selectedPhoto.photoData || ''}
+                        src={selectedPhoto.url}
                         alt="Full view"
                         style={{
                             maxWidth: '100%',
