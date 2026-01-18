@@ -9,6 +9,7 @@ import { onAuthStateChanged, User, signOut, updateProfile } from 'firebase/auth'
 
 import { getIndiaDate } from '@/utils/dateUtils';
 import imageCompression from 'browser-image-compression';
+import { logMessage } from '@/app/actions';
 
 interface HabitContextType extends AppState {
     toggleHabit: (date: string, habit: keyof DailyProgress | 'workout1' | 'workout2') => void;
@@ -113,8 +114,10 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
             console.error("Firestore Error:", err);
             if (err.code === 'permission-denied') {
                 setError("Database permission denied. Your progress is NOT saving. Please update Firestore Rules.");
+                logMessage("Firestore permission denied", "ERROR", { uid: user?.uid });
             } else {
                 setError(err.message);
+                logMessage("Firestore error", "ERROR", { uid: user?.uid, error: err.message });
             }
         });
 
@@ -148,6 +151,7 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
             setError(null);
         } catch (e: any) {
             console.error("Error writing document: ", e);
+            logMessage("Sync to Firestore failed", "ERROR", { uid: user?.uid, error: e.message });
             if (e.code === 'permission-denied') {
                 setError("Database permission denied. Changes won't save.");
             }
@@ -210,6 +214,7 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
     };
 
     const toggleHabit = (date: string, habit: string) => { // Type loose here to handle the workout special case
+        logMessage("Toggling habit", "INFO", { uid: user?.uid, date, habit });
         updateEntry(date, (curr) => {
             if (habit === 'workout1') {
                 return { workouts: { ...curr.workouts, indoor: !curr.workouts.indoor } };
@@ -226,6 +231,7 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
     };
 
     const updateWater = (date: string, amount: number) => {
+        logMessage("Updating water", "INFO", { uid: user?.uid, date, amount });
         updateEntry(date, { water: amount });
     };
 
@@ -248,12 +254,19 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
             try {
                 // Only compress images
                 if (file.type.startsWith('image/')) {
-                    console.log(`Original size: ${file.size / 1024 / 1024} MB`);
+                    const originalSizeMsg = `Original size: ${file.size / 1024 / 1024} MB`;
+                    console.log(originalSizeMsg);
+                    logMessage(originalSizeMsg, "INFO", { uid: user?.uid, filename });
+
                     compressedFile = await imageCompression(file, options);
-                    console.log(`Compressed size: ${compressedFile.size / 1024 / 1024} MB`);
+
+                    const compressedSizeMsg = `Compressed size: ${compressedFile.size / 1024 / 1024} MB`;
+                    console.log(compressedSizeMsg);
+                    logMessage(compressedSizeMsg, "INFO", { uid: user?.uid, filename });
                 }
             } catch (err) {
                 console.warn("Compression failed, uploading original:", err);
+                logMessage(`Compression failed: ${err}`, "WARN", { uid: user?.uid, filename });
             }
 
             const snapshot = await uploadBytes(storageRef, compressedFile);
@@ -273,6 +286,8 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
 
     const deletePhoto = async (date: string, photoUrl: string) => {
         if (!user) throw new Error("User not authenticated");
+
+        logMessage("Deleting photo", "INFO", { uid: user?.uid, date, photoUrl });
 
         try {
             // Delete from Storage
@@ -304,6 +319,7 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
     };
 
     const resetChallenge = () => {
+        logMessage("Resetting challenge", "WARN", { uid: user?.uid });
         if (user) {
             // 1. Clear LocalStorage Photos
             const prefix = `photo_${user.uid}_`;
@@ -340,6 +356,7 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
     };
 
     const completeOnboarding = () => {
+        logMessage("Completing onboarding", "INFO", { uid: user?.uid });
         localStorage.setItem('hasSeenOnboarding', 'true');
         setState(prev => {
             const newState = { ...prev, hasSeenOnboarding: true };
@@ -349,6 +366,7 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
     };
 
     const completeHabitOnboarding = () => {
+        logMessage("Completing habit onboarding", "INFO", { uid: user?.uid });
         localStorage.setItem('hasSeenHabitOnboarding', 'true');
         setState(prev => {
             const newState = { ...prev, hasSeenHabitOnboarding: true };
@@ -357,6 +375,7 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
     };
 
     const setUserName = (name: string) => {
+        logMessage("Setting username", "INFO", { uid: user?.uid, name });
         setState(prev => {
             const newState = { ...prev, userName: name };
             syncToFirestore(newState);
@@ -365,11 +384,13 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
     };
 
     const logout = async () => {
+        logMessage("Logging out", "INFO", { uid: user?.uid });
         try {
             await auth.signOut();
             setState(INITIAL_STATE);
         } catch (error) {
             console.error("Error signing out: ", error);
+            logMessage("Sign out error", "ERROR", { error });
         }
     };
 
@@ -383,6 +404,8 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
 
     const toggleDailyHabit = (date: string, habitId: string) => {
         if (habitId === 'date') return; // Don't toggle the date field
+
+        logMessage("Toggling daily habit", "INFO", { uid: user?.uid, date, habitId });
 
         setState(prev => {
             const currentEntry = getDailyHabitEntry(date);
@@ -404,6 +427,7 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
     };
 
     const addHabitCategory = (category: Omit<HabitCategory, 'id'>) => {
+        logMessage("Adding habit category", "INFO", { uid: user?.uid, categoryName: category.name });
         setState(prev => {
             const id = `custom_${Date.now()}`;
             const newCategory: HabitCategory = { ...category, id };
@@ -416,6 +440,7 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
     };
 
     const removeHabitCategory = (id: string) => {
+        logMessage("Removing habit category", "INFO", { uid: user?.uid, categoryId: id });
         setState(prev => {
             const currentCategories = prev.habitCategories || [];
             const newCategories = currentCategories.filter(cat => cat.id !== id);
@@ -426,6 +451,7 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
     };
 
     const reorderHabitCategories = (newOrder: HabitCategory[]) => {
+        logMessage("Reordering habit categories", "INFO", { uid: user?.uid });
         setState(prev => {
             const newState = { ...prev, habitCategories: newOrder };
             syncToFirestore(newState);
