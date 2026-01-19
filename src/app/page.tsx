@@ -237,13 +237,6 @@ export default function Home() {
       </div>
 
       <div style={{ marginTop: 24 }}>
-        <h2 className="heading-lg" style={{ marginBottom: 16 }}>Today's Photos</h2>
-        <PhotoUploader
-          photos={entry.photos}
-          onUpload={(file) => uploadPhoto(currentDate, file)}
-          onDelete={(url) => deletePhoto(currentDate, url)}
-          variant="grid-only"
-        />
       </div>
 
       <PhotoFAB ref={photoFabRef} onUpload={(file) => uploadPhoto(currentDate, file)} />
