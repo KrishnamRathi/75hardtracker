@@ -1,0 +1,140 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 12px;
+}
+
+@media (max-width: 400px) {
+    .statsGrid {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+.habitSection {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.sectionTitle {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.habitList {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.habitItem {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+}
+
+.habitInfo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.habitIcon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(10, 132, 255, 0.1);
+}
+
+.habitIcon.text-blue {
+    background: rgba(10, 132, 255, 0.1);
+    color: #0A84FF;
+}
+
+.habitIcon.text-green {
+    background: rgba(50, 215, 75, 0.1);
+    color: #32D74B;
+}
+
+.habitIcon.text-orange {
+    background: rgba(255, 159, 10, 0.1);
+    color: #FF9F0A;
+}
+
+.habitIcon.text-purple {
+    background: rgba(191, 90, 242, 0.1);
+    color: #BF5AF2;
+}
+
+.habitIcon.text-yellow {
+    background: rgba(255, 214, 10, 0.1);
+    color: #FFD60A;
+}
+
+.habitLabel {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--foreground);
+}
+
+.habitStats {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.habitCount {
+    font-size: 13px;
+    color: var(--text-secondary);
+    min-width: 50px;
+}
+
+.progressBar {
+    flex: 1;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progressFill {
+    height: 100%;
+    background: var(--primary);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.habitPercentage {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--foreground);
+    min-width: 45px;
+    text-align: right;
+}
+
+@media (max-width: 400px) {
+    .statsGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .periodLabel {
+        font-size: 16px;
+    }
+}

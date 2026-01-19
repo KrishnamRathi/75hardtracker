@@ -4,6 +4,8 @@ import { useHabit } from '@/context/HabitContext';
 import TaskCard from '@/components/TaskCard';
 import BottomNav from '@/components/BottomNav';
 import ManageHabitsModal from '@/components/ManageHabitsModal';
+import DailyHabitsAnalytics from '@/components/DailyHabitsAnalytics';
+import DateStrip from '@/components/DateStrip';
 import { Target, Sun, Moon, Sparkles, Brain, Music, Heart, Star, Coffee, Book, Dumbbell, Settings, LucideIcon } from 'lucide-react';
 import styles from '../page.module.css';
 import { getIndiaDate } from '@/utils/dateUtils';
@@ -35,7 +37,8 @@ export default function Habits() {
         user,
         loading,
         hasSeenHabitOnboarding,
-        completeHabitOnboarding
+        completeHabitOnboarding,
+        startDate
     } = useHabit();
     const [currentDate, setCurrentDate] = useState<string>('');
     const [isManageModalOpen, setIsManageModalOpen] = useState(false);
@@ -88,19 +91,17 @@ export default function Habits() {
                         Manage
                     </button>
                 </div>
-                <div style={{
-                    fontSize: '14px',
-                    color: 'var(--text-secondary)',
-                    marginTop: '8px',
-                    textAlign: 'center'
-                }}>
-                    {new Date(currentDate).toLocaleDateString('en-US', {
-                        weekday: 'long',
-                        month: 'long',
-                        day: 'numeric'
-                    })}
-                </div>
+
+                {/* Date Strip */}
+                <DateStrip
+                    startDate={startDate}
+                    selectedDate={currentDate}
+                    onSelectDate={setCurrentDate}
+                    mode="habits"
+                />
             </header>
+
+            <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '20px 0' }} />
 
             <div className={styles.grid}>
                 {habitCategories?.map((category) => {

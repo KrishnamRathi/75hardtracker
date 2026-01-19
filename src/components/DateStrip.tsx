@@ -8,21 +8,30 @@ interface DateStripProps {
     selectedDate: string;
     onSelectDate: (date: string) => void;
     daysCount?: number;
+    mode?: 'challenge' | 'habits'; // New prop to determine completion check
 }
 
 import { useHabit } from '@/context/HabitContext';
 import { checkCompletion } from '@/utils/completion';
 import { getIndiaDate } from '@/utils/dateUtils';
 
+// Check if all habits are complete for a given date
+function checkHabitCompletion(entry: any, habitCategories: any[]): boolean {
+    if (!entry || !habitCategories) return false;
+    // Check if all habit categories are completed
+    return habitCategories.every(category => entry[category.id] === true);
+}
+
 // inside component
 export default function DateStrip({
     startDate,
     selectedDate,
     onSelectDate,
-    daysCount = 75
+    daysCount = 75,
+    mode = 'challenge' // Default to challenge mode for backward compatibility
 }: DateStripProps) {
     const scrollRef = useRef<HTMLDivElement>(null);
-    const { getEntry } = useHabit();
+    const { getEntry, getDailyHabitEntry, habitCategories } = useHabit();
     const today = getIndiaDate();
 
     // Generate dates
@@ -60,8 +69,15 @@ export default function DateStrip({
                 const isPast = dateStr < today;
                 const dayNum = index + 1;
 
-                const entry = getEntry(dateStr);
-                const isComplete = checkCompletion(entry);
+                // Determine completion based on mode
+                let isComplete = false;
+                if (mode === 'challenge') {
+                    const entry = getEntry(dateStr);
+                    isComplete = checkCompletion(entry);
+                } else if (mode === 'habits') {
+                    const habitEntry = getDailyHabitEntry(dateStr);
+                    isComplete = checkHabitCompletion(habitEntry, habitCategories || []);
+                }
 
                 // Status classes: 
                 // Green if complete (past or present).

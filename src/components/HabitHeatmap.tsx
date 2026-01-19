@@ -8,7 +8,7 @@ import { getIndiaDate } from '@/utils/dateUtils';
 
 export default function HabitHeatmap() {
     const { getDailyHabitEntry, habitCategories } = useHabit();
-    const [selectedDate, setSelectedDate] = useState(new Date());
+    const [selectedDate, setSelectedDate] = useState(new Date(getIndiaDate()));
 
     const checkHabitCompletion = (entry: ReturnType<typeof getDailyHabitEntry>): boolean => {
         if (!entry) return false;

@@ -1,11 +1,12 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useHabit } from '@/context/HabitContext';
+import { useRouter } from 'next/navigation';
 import TaskCard from '@/components/TaskCard';
 import WaterTracker from '@/components/WaterTracker';
 import BottomNav from '@/components/BottomNav';
 import DateStrip from '@/components/DateStrip';
-import { Dumbbell, Sun, BookOpen, Carrot, RotateCcw, Brain, Camera } from 'lucide-react';
+import { Dumbbell, Sun, BookOpen, Carrot, RotateCcw, Brain, Camera, BarChart2 } from 'lucide-react';
 import styles from './page.module.css';
 import { getIndiaDate } from '@/utils/dateUtils';
 import PhotoUploader from '@/components/PhotoUploader';
@@ -34,6 +35,7 @@ export default function Home() {
     userName
   } = useHabit();
 
+  const router = useRouter();
   const [currentDate, setCurrentDate] = useState<string>('');
   const dateInputRef = React.useRef<HTMLInputElement>(null);
   const photoFabRef = React.useRef<PhotoFABRef>(null);
@@ -159,6 +161,33 @@ export default function Home() {
             <span style={{ fontSize: '16px', fontWeight: 600 }}>
               {calculateRemainingDays()}
             </span>
+          </div>
+          <div
+            onClick={() => router.push('/challenge-insights')}
+            style={{
+              cursor: 'pointer',
+              background: 'rgba(10, 132, 255, 0.15)',
+              border: '1px solid rgba(10, 132, 255, 0.3)',
+              borderRadius: '12px',
+              padding: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s ease',
+              minWidth: '44px',
+              height: '44px',
+              color: '#0A84FF'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(10, 132, 255, 0.25)';
+              e.currentTarget.style.transform = 'scale(1.05)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(10, 132, 255, 0.15)';
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+          >
+            <BarChart2 size={20} />
           </div>
         </div>
 

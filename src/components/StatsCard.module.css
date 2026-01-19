@@ -1,0 +1,77 @@
+.card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    backdrop-filter: blur(10px);
+    transition: all 0.2s ease;
+}
+
+.card:active {
+    transform: scale(0.98);
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.iconWrapper {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(10, 132, 255, 0.1);
+}
+
+.iconWrapper.text-blue {
+    background: rgba(10, 132, 255, 0.1);
+    color: #0A84FF;
+}
+
+.iconWrapper.text-green {
+    background: rgba(50, 215, 75, 0.1);
+    color: #32D74B;
+}
+
+.iconWrapper.text-orange {
+    background: rgba(255, 159, 10, 0.1);
+    color: #FF9F0A;
+}
+
+.iconWrapper.text-purple {
+    background: rgba(191, 90, 242, 0.1);
+    color: #BF5AF2;
+}
+
+.iconWrapper.text-yellow {
+    background: rgba(255, 214, 10, 0.1);
+    color: #FFD60A;
+}
+
+.title {
+    font-size: 10px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--foreground);
+    line-height: 1;
+}
+
+.subtitle {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
